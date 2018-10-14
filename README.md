@@ -47,6 +47,8 @@ Here is the Launching page - where you can see the creation progress of your Che
 **MAKE SURE YOU DOWNLOAD THEM BOTH AS WE WILL NEED THEM LATER**
 ![launch](images/owca6.png)
 
+---
+
 ### Chef workstation
 We will use AWS Cloud9 as our Workstation in order to communicate with the Chef Server. This is the simplest way we can have a workstation configured for managing our Chef Automate environment.
 
@@ -131,6 +133,8 @@ After this it is time to create the role. We can do that by running the followin
 ```
 knife role from file roles/popup-role.rb
 ```
+
+---
 
 ### Bootstrapping nodes
 
