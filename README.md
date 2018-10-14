@@ -129,7 +129,7 @@ RUN_LIST="role[popup-role]"
 
 To bootstrap our node, lets modify the cloudformation template we used at the beginning - and add the contents of `userdata.sh` from the starter kit.
 
-### Modifying the `userdata` in our Autoscaling group
+#### Modifying the `userdata` in our Autoscaling group
 
 Lets add the modified `userdata.sh` to our Cloudformation template. Roughly on line 135 find the `LaunchConfig` resource. Here we will replace the `UserData` property from this: 
 ```yaml
@@ -194,3 +194,89 @@ knife node list
 ```
 Once the node is bootstrapped - it should show up there as a node (an instance ID should be shown *i-xxxxx*).
 
+### Continuous Configuraton
+
+Using AWS CodePipeline for Continuous Cookbook Integration
+
+#### Summary:
+
+This solution is an example of how you can continuously upload cookbooks to a Chef Server, provided that those cookbooks pass necessary tests. After committing changes to an AWS CodeCommit repository, a pipeline in AWS CodePipeline will be triggered. You will use two AWS CodeBuild stages. The first stage will test the cookbook in a variety of ways (such as general linting or syntax checks). You will also use Test Kitchen to run Bats tests to confirm that the cookbook passes application-specific tests before being uploaded to the Chef Server. The second CodeBuild stage will upload the cookbook to the Chef Server (provided all previous pipeline stages have successfully executed, and manual approval was granted).
+After executing the steps outlined below, you will have a CodeCommit repository where you can commit new cookbooks. Using the test cookbook provided, you will be able to upload a web server cookbook which uses Nginx. You will be able to see this cookbook on the Chef Server and can then add this cookbook to run lists for an nodes in your environment.
+
+
+#### Information on the Example Cookbook
+
+The example cookbook installs and configures a web server running Nginx which displays an example AWS OpsWorks for Chef Automate home page. Within this cookbook, we also have two Bats files used for testing to make sure that port 80 is configured to have Nginx listening. If the cookbook passes these tests, then we will continue to move forward and upload the cookbook to the Chef Server. If the cookbook fails these test, then the pipeline will stop (and fail), and the cookbook will not be uploaded to the Chef Server. 
+
+#### Steps for Execution:
+
+1. Launch the CloudFormation template, by using: `https://s3.amazonaws.com/aws-opsworks-for-chef-automate-workshop/cfn_chef_cookbook_testing.json` This template will create a CodeCommit repository and a CodePipeline pipeline. Using these resources, you will commit your cookbook to a source repository, which will then trigger the pipeline. Additional AWS Identity and Access Management (IAM) roles and policies are created in this template, as needed for each service.
+2. Generate a set of GIT credentials for your IAM user to be used with CodeCommit. This is done via the IAM console. 
+3. Clone the CodeCommit repository to your workstation. The commands to do so can be found in the CodeCommit console.
+      1. **Note:** *You will receive a warning about cloning an empty repository. This is expected.*
+4. Move the example_cookbook.zip file into the local copy of the CodeCommit repository.
+    1. Download the workshop cookbook from S3 to your local workstation (link provided in workshop) and unzip its contents:
+        ```bash
+        aws s3 cp s3://darko-opsworks/berlin-popup.zip aws_ow_cm_test_cookbook/ && unzip aws_ow_cm_test_cookbook/berlin-popup.zip -d aws_ow_cm_test_cookbook/
+        ```
+    2. Move into the local repository directory:
+        ```bash 
+        cd aws_ow_cm_test_cookbook/
+        ```
+    3. Run `ls -a` to view the files we'll be committing. You should see the following files and directories:
+        ``` 
+        buildspec-upload.yml
+        buildspec-upload.yml
+        chefignore
+        .kitchen.yml
+        Berksfile
+        files
+        metadata.json
+        metadata.rb
+        recipes
+        templates
+        test
+        ```
+5. Commit the changes to the CodeCommit repository in order to trigger the pipeline.
+    1. Add the files moved over in step 4 to the repository:
+        ```bash
+        git add .
+        ```
+    2. Commit the files:
+        ```bash 
+        git commit -am 'first commit'
+        ```
+    3. Push the files to the master branch in order to trigger the pipeline:
+        ```bash 
+        git push origin master
+        ```
+6. Go to the CodePipline console to view the pipeline's progression. When the pipeline finishes the first build stage, it will require manual approval to move forward.
+    1. To see the output of either build stage, you can click on “Details” within the build stage box on the pipeline page.
+    2. Grant this approval to continue to the second build stage.
+    3. Please note that a pipeline execution will be triggered per each commit to the repository. If you push to master multiple times in a row, you can expect to see the pipeline execute once per push. So, if a mistake is made, the Pipeline can always be re-triggered by a new push to the master branch from the workstation.
+7. When the pipeline has finished executing, check to see the list of cookbooks on the Chef Server to confirm a successful upload by running knife cookbook list and confirming the new cookbook is on the list.
+    1. knife cookbook list is also the final command executed in the second build stage, so you can see the output there as well.
+    2. If the pipeline fails, you can find more information by clicking on the “Failed” state and then clicking “Details.” There, you can see more verbose information on where exactly the pipeline failed. If the S3 bucket location for the starter kit was incorrect, an error will occur on the second build stage. If any cookbook tests failed, then a failure will occur on the first build stage. 
+
+
+### Adding the cookbook to our run list
+
+Now its time to edit our role to add the cookbook we have in our pipeline to our nodes run list. Open up our role `.rb` file at `starterkit/roles/popup-role.rb` and add the `"recipe[opsworks-webserver]"` to the `run_list` section.
+It should now look something like this:
+```ruby
+name "popup-role"
+description "This is an example role"
+
+run_list(
+  "recipe[chef-client]",
+  "recipe[opsworks-webserver]"
+)
+default_attributes "chef_client" => { "interval" => "60", "splay"=> "10" }
+```
+
+Lets make changes to this role on the Chef server by running the following command:
+```
+knife role from file roles/popup-role.rb
+```
+
+After a couple of minutes our nodes should be picking up the new run list from our role. 

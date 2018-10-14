@@ -1,0 +1,16 @@
+version: 0.2
+
+phases:
+  build:
+    commands:
+     - ls -lash
+     - apt-get update -y && apt-get install python-pip unzip -y
+     - pip install awscli
+     - aws s3 cp $PATHTOSTARTERKIT .
+     - unzip *starter_kit.zip -d starter_kit
+     - ls -lash
+     - find starter_kit -type d -name '.chef' -exec cp -r {} . \;
+     - knife cookbook list
+     - berks install
+     - berks upload
+     - knife cookbook list
