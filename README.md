@@ -27,7 +27,25 @@ aws opsworks-cm ...
 
 But we will do it via the Web console: 
 
---Insert image here--
+Go to the AWS Web console and Search for `Opsworks`. Once on the Opsworks web console, select `Opsworks for Chef Automate` on the left hand menu. Click the big `+` button to add a new Chef Automate server.
+
+Here we the Chef server name, region, and instance size. Pick a name, the `N. Virginia region` and just stick to the smallest instance size
+![name_region](images/owca1.png)
+
+This is where you set your SSH key in order to access your Chef server. This time we won't need it, so feel free to ignore this.
+![ssh_key](images/owca2.png)
+
+On the next page we can configure Network and Security, System Maintenance and Backup settings - If you are using the default VPC, just leave everything as default. 
+![networking](images/owca3.png)
+![backup](images/owca4.png)
+
+Finally here is the review page, so we can review everything before creating. Make sure all looks good, and then click the `Launch` button.
+![review](images/owca5.png)
+
+Here is the Launching page - where you can see the creation progress of your Chef Automate server, and as well download the Web UI credentials and the **starter kit**. 
+
+**MAKE SURE YOU DOWNLOAD THEM BOTH AS WE WILL NEED THEM LATER**
+![launch](images/owca6.png)
 
 ### Chef workstation
 We will use AWS Cloud9 as our Workstation in order to communicate with the Chef Server. This is the simplest way we can have a workstation configured for managing our Chef Automate environment.
