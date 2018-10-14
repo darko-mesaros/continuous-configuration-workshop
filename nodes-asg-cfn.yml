@@ -1,0 +1,213 @@
+# Nodes Autoscalign Cloudformation template
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  Key:
+    Type: AWS::EC2::KeyPair::KeyName
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      InstanceTenancy: 'default'
+      Tags:
+        - Key: Name
+          Value: PopupLoft
+  
+  Subnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: '10.0.0.0/24'
+      AvailabilityZone: 'eu-west-1a'
+      Tags:
+        - Key: Name
+          Value: PopupLoft
+
+  SubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: '10.0.1.0/24'
+      AvailabilityZone: 'eu-west-1b'
+      Tags:
+        - Key: Name
+          Value: PopupLoft
+
+  IGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: PopupLoft
+
+  AttachIGW:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref IGW
+  
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: PopupLoft
+
+  Route:
+    Type: AWS::EC2::Route
+    DependsOn: AttachIGW
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref IGW
+
+
+  SubnetRouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet
+      RouteTableId: !Ref RouteTable
+  SubnetRouteTableAssocB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref SubnetB
+      RouteTableId: !Ref RouteTable
+
+  SG:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "SSH and HTTP"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        -
+          CidrIp: "0.0.0.0/0"
+          IpProtocol: "tcp"
+          FromPort: "22"
+          ToPort: "22"
+        -
+          SourceSecurityGroupId: !Ref LBSG
+          IpProtocol: "tcp"
+          FromPort: "80"
+          ToPort: "80"
+      Tags:
+        - Key: Name
+          Value: PopupLoft
+
+  LBSG:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "LoadBalancer Security Group"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        -
+          CidrIp: "0.0.0.0/0"
+          IpProtocol: "tcp"
+          FromPort: "80"
+          ToPort: "80"
+      Tags:
+        - Key: Name
+          Value: PopupLoft
+
+  ASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        - !Ref Subnet
+        - !Ref SubnetB
+      LaunchConfigurationName: !Ref LaunchConfig
+      MinSize: '1'
+      MaxSize: '1'
+      DesiredCapacity: '1'
+      TargetGroupARNs:
+        - !Ref ALBTargetGroup
+      Tags:
+        - Key: Name
+          Value: PopupLoft
+          PropagateAtLaunch: 'true'
+
+  LaunchConfig:
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+    Properties:
+      AssociatePublicIpAddress: 'true'
+      ImageId: 'ami-ca0135b3'
+      SecurityGroups:
+        - !Ref SG
+      KeyName: !Ref Key
+      InstanceType: 't2.micro'
+      IamInstanceProfile: !Ref InstanceProfile
+      UserData: 
+        'Fn::Base64': !Sub |
+          #!/bin/bash
+          yum -y update
+          yum -y install nginx
+          service nginx start
+  ALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Subnets: 
+        - !Ref Subnet
+        - !Ref SubnetB
+      SecurityGroups:
+        - !Ref LBSG
+      Tags:
+        - Key: Name
+          Value: PopupLoft
+
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: 'forward'
+          TargetGroupArn: !Ref ALBTargetGroup
+      LoadBalancerArn: !Ref ALB
+      Port: '80'
+      Protocol: 'HTTP'
+
+  ALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Port: '80'
+      Protocol: 'HTTP'
+      VpcId: !Ref VPC
+      HealthCheckIntervalSeconds: '30'
+      HealthCheckTimeoutSeconds: '25'
+      HealthyThresholdCount: '3'
+      UnhealthyThresholdCount: '5'
+      Tags:
+        - Key: Name
+          Value: PopupLoft
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+        Version: '2012-10-17'
+      Path: /
+      Policies:
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - opsworks-cm:AssociateNode
+            - opsworks-cm:DescribeNodeAssociationStatus
+            Effect: Allow
+            Resource: '*'
+          Version: '2012-10-17'
+        PolicyName: InstancePolicy
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+      - Ref: InstanceRole
