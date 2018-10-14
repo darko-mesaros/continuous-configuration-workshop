@@ -22,6 +22,7 @@ Resources:
       VpcId: !Ref VPC
       CidrBlock: '10.0.0.0/24'
       AvailabilityZone: 'us-east-1a'
+      MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
           Value: PopupLoft
@@ -32,6 +33,7 @@ Resources:
       VpcId: !Ref VPC
       CidrBlock: '10.0.1.0/24'
       AvailabilityZone: 'us-east-1b'
+      MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
           Value: PopupLoft
@@ -211,3 +213,14 @@ Resources:
       Path: /
       Roles:
       - Ref: InstanceRole
+
+Outputs:
+  SubnetA-ID:
+    Description: Subnet A ID
+    Value: !Ref 'Subnet.id'
+  SubnetB-ID:
+    Description: Subnet A ID
+    Value: !Ref 'SubnetB.id'
+  ALBDNSName:
+    Description: Application Load Balancer Endpoint DNS entry
+    Value: !GetAtt 'ALB.DNSName'

@@ -1,0 +1,17 @@
+---
+provisioner:
+  name: chef_solo
+
+driver:
+  name: ec2
+  region: us-east-1
+  instance_type: t2.medium
+  subnet_id: <CHANGEME>
+
+platforms:
+  - name: amazon
+
+suites:
+  - name: default
+    run_list:
+      - recipe[opsworks-webserver]
