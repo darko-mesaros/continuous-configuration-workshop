@@ -17,6 +17,11 @@ Launch the `nodes-asg-cfn.yml` Cloudformation template in your account. This tem
 - Autoscaling Group
 - Elastic Loadbalancer
 
+You can do this, either with the Cloudformation web console or via the AWS CLI:
+```
+aws cloudformation create-stack --stack-name popuploft-opsworks-vpc-asg --template-body file://nodes-asg-cnf.yml --parameters ParameterKey=Key,ParameterValue=<CHANGEME-MY-AWS-SSH-KEY>
+```
+
 ### Launching a Chef Automate Server
 We need to launch a Opsworks for Chef Automate server via the console or via CLI. 
 
@@ -136,6 +141,21 @@ knife role from file roles/popup-role.rb
 
 ---
 
+### Upload our starter kit to S3
+
+In this step we will create an S3 bucket and store our starter kit `.zip` file (that we got during the Chef server launch) in it. This will be used later on with the CI/CD pipeline. 
+
+#### Create a S3 bucket
+
+You can do this via the Web Console or the AWS CLI 
+```
+aws s3 mb s3://<CHANGEME_BUCKET_NAME>
+```
+
+Upload the starter kit `.zip` file to this directory and make it public. Take note of the S3 path of this file, as we will need it later on. It should be something like: `s3://bucket-name/starterkit.zip`
+
+---
+
 ### Bootstrapping nodes
 
 So, we need to bootstrap our nodes! Let's first make some changes to our `userdata.sh` file which has come with out starter kit. In that file we need to change the runlist to contain the role we just created. 
@@ -216,6 +236,8 @@ knife node list
 ```
 Once the node is bootstrapped - it should show up there as a node (an instance ID should be shown *i-xxxxx*).
 
+---
+
 ### Continuous Configuraton
 
 Using AWS CodePipeline for Continuous Cookbook Integration
@@ -234,6 +256,12 @@ The example cookbook installs and configures a web server running Nginx which di
 
 1. Launch the CloudFormation template, by using: `https://s3.amazonaws.com/aws-opsworks-for-chef-automate-workshop/cfn_chef_cookbook_testing.json` This template will create a CodeCommit repository and a CodePipeline pipeline. Using these resources, you will commit your cookbook to a source repository, which will then trigger the pipeline. Additional AWS Identity and Access Management (IAM) roles and policies are created in this template, as needed for each service.
 2. Generate a set of GIT credentials for your IAM user to be used with CodeCommit. This is done via the IAM console. 
+      1. Go to the IAM console and search for your user. 
+      2. Under the `Security Credentials` find the `HTTPS Git Credentials for AWS CodeCommit`
+      ![http_creds](images/iam1.png)
+      3. Click `Generate Credentials`
+      4. Save these credentials somewhere (or click the download button), we will need them for interacting with AWS CodeCommit
+      ![save_cred](images/iam2.png)
 3. Clone the CodeCommit repository to your workstation. The commands to do so can be found in the CodeCommit console.
       1. **Note:** *You will receive a warning about cloning an empty repository. This is expected.*
 4. Move the example_cookbook.zip file into the local copy of the CodeCommit repository.
@@ -280,6 +308,7 @@ The example cookbook installs and configures a web server running Nginx which di
     1. knife cookbook list is also the final command executed in the second build stage, so you can see the output there as well.
     2. If the pipeline fails, you can find more information by clicking on the “Failed” state and then clicking “Details.” There, you can see more verbose information on where exactly the pipeline failed. If the S3 bucket location for the starter kit was incorrect, an error will occur on the second build stage. If any cookbook tests failed, then a failure will occur on the first build stage. 
 
+---
 
 ### Adding the cookbook to our run list
 
