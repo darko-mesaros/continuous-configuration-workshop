@@ -25,11 +25,6 @@ ws cloudformation create-stack --stack-name popuploft-opsworks-vpc-asg --templat
 ### Launching a Chef Automate Server
 We need to launch a Opsworks for Chef Automate server via the console or via CLI. 
 
-Here is an example how we do it via the CLI:
-```bash
-aws opsworks-cm ...
-```
-
 But we will do it via the Web console: 
 
 Go to the AWS Web console and Search for `Opsworks`. Once on the Opsworks web console, select `Opsworks for Chef Automate` on the left hand menu. Click the big `+` button to add a new Chef Automate server.
