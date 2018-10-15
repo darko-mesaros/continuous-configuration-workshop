@@ -287,7 +287,8 @@ The example cookbook installs and configures a web server running Nginx which di
         templates
         test
         ```
-5. Commit the changes to the CodeCommit repository in order to trigger the pipeline.
+5. Make changs to your .kitchen.yml file and add the **subnet id of one of your default VPC subnets** - this is needed so that test kitchen can launch EC2 instances in your default VPC. 
+6. Commit the changes to the CodeCommit repository in order to trigger the pipeline.
     1. Add the files moved over in step 4 to the repository:
         ```bash
         git add .
@@ -300,11 +301,11 @@ The example cookbook installs and configures a web server running Nginx which di
         ```bash 
         git push origin master
         ```
-6. Go to the CodePipline console to view the pipeline's progression. When the pipeline finishes the first build stage, it will require manual approval to move forward.
+7. Go to the CodePipline console to view the pipeline's progression. When the pipeline finishes the first build stage, it will require manual approval to move forward.
     1. To see the output of either build stage, you can click on “Details” within the build stage box on the pipeline page.
     2. Grant this approval to continue to the second build stage.
     3. Please note that a pipeline execution will be triggered per each commit to the repository. If you push to master multiple times in a row, you can expect to see the pipeline execute once per push. So, if a mistake is made, the Pipeline can always be re-triggered by a new push to the master branch from the workstation.
-7. When the pipeline has finished executing, check to see the list of cookbooks on the Chef Server to confirm a successful upload by running knife cookbook list and confirming the new cookbook is on the list.
+8. When the pipeline has finished executing, check to see the list of cookbooks on the Chef Server to confirm a successful upload by running knife cookbook list and confirming the new cookbook is on the list.
     1. knife cookbook list is also the final command executed in the second build stage, so you can see the output there as well.
     2. If the pipeline fails, you can find more information by clicking on the “Failed” state and then clicking “Details.” There, you can see more verbose information on where exactly the pipeline failed. If the S3 bucket location for the starter kit was incorrect, an error will occur on the second build stage. If any cookbook tests failed, then a failure will occur on the first build stage. 
 
