@@ -307,24 +307,6 @@ suites:
     run_list:
       - recipe[opsworks-webserver]
 ```
-7. ---
-provisioner:
-  name: chef_solo
-
-driver:
-  name: ec2
-  region: us-east-1
-  instance_type: t2.medium
-  subnet_id: subnet-xxxxxxxxxxxxx
-
-platforms:
-  - name: amazon
-
-suites:
-  - name: default
-    run_list:
-      - recipe[opsworks-webserver]
-8. ```
 6. Commit the changes to the CodeCommit repository in order to trigger the pipeline.
     1. Add the files moved over in step 4 to the repository:
         ```bash
