@@ -287,7 +287,26 @@ The example cookbook installs and configures a web server running Nginx which di
         templates
         test
         ```
-5. Make changs to your .kitchen.yml file and add the **subnet id of one of your default VPC subnets** - this is needed so that test kitchen can launch EC2 instances in your default VPC. 
+5. Make changs to your .kitchen.yml file and add the **subnet id of one of your default VPC subnets** - this is needed so that test kitchen can launch EC2 instances in your default VPC. It should look something like this:
+6. ```yaml
+7. ---
+provisioner:
+  name: chef_solo
+
+driver:
+  name: ec2
+  region: us-east-1
+  instance_type: t2.medium
+  subnet_id: subnet-xxxxxxxxxxxxx
+
+platforms:
+  - name: amazon
+
+suites:
+  - name: default
+    run_list:
+      - recipe[opsworks-webserver]
+8. ```
 6. Commit the changes to the CodeCommit repository in order to trigger the pipeline.
     1. Add the files moved over in step 4 to the repository:
         ```bash
