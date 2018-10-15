@@ -288,7 +288,25 @@ The example cookbook installs and configures a web server running Nginx which di
         test
         ```
 5. Make changs to your .kitchen.yml file and add the **subnet id of one of your default VPC subnets** - this is needed so that test kitchen can launch EC2 instances in your default VPC. It should look something like this:
-6. ```yaml
+```yaml
+---
+provisioner:
+  name: chef_solo
+
+driver:
+  name: ec2
+  region: us-east-1
+  instance_type: t2.medium
+  subnet_id: subnet-xxxxxxxx
+
+platforms:
+  - name: amazon
+
+suites:
+  - name: default
+    run_list:
+      - recipe[opsworks-webserver]
+```
 7. ---
 provisioner:
   name: chef_solo
