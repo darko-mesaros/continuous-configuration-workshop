@@ -215,12 +215,12 @@ Resources:
       - Ref: InstanceRole
 
 Outputs:
-  SubnetA-ID:
+  SubnetAID:
     Description: Subnet A ID
-    Value: !Ref 'Subnet.id'
-  SubnetB-ID:
+    Value: !Ref Subnet
+  SubnetBID:
     Description: Subnet A ID
-    Value: !Ref 'SubnetB.id'
+    Value: !Ref SubnetB
   ALBDNSName:
     Description: Application Load Balancer Endpoint DNS entry
     Value: !GetAtt 'ALB.DNSName'

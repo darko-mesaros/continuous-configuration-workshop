@@ -6,7 +6,7 @@ driver:
   name: ec2
   region: us-east-1
   instance_type: t2.medium
-  subnet_id: <CHANGEME>
+  subnet_id: <CHANGEME-TO-A-DEFAULTVPC-SUBNET>
 
 platforms:
   - name: amazon

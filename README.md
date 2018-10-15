@@ -19,7 +19,7 @@ Launch the `nodes-asg-cfn.yml` Cloudformation template in your account. This tem
 
 You can do this, either with the Cloudformation web console or via the AWS CLI:
 ```
-aws cloudformation create-stack --stack-name popuploft-opsworks-vpc-asg --template-body file://nodes-asg-cnf.yml --parameters ParameterKey=Key,ParameterValue=<CHANGEME-MY-AWS-SSH-KEY>
+ws cloudformation create-stack --stack-name popuploft-opsworks-vpc-asg --template-body file://nodes-asg-cfn.yml --parameters ParameterKey=Key,ParameterValue=darko-us-east-1 --capabilities CAPABILITY_IAM --region us-east-1       
 ```
 
 ### Launching a Chef Automate Server
